@@ -6,6 +6,8 @@ const pug = require('gulp-pug')
 const sass = require('gulp-sass') // sass
 const plumber = require('gulp-plumber') // 載入 gulp-plumber
 const gulpImagemin = require('gulp-imagemin') //壓縮圖片
+const consolidate = require('gulp-consolidate')
+const iconfont = require('gulp-iconfont')
 
 // 路徑設定
 const path = {
@@ -14,7 +16,7 @@ const path = {
 }
 
 // 服務
-gulp.task('browser-sync', ['pug', 'sass', 'image'], function() {
+gulp.task('browser-sync', ['pug', 'sass', 'image', 'iconfont'], function() {
   browserSync.init(['css/*.css', 'js/*.js'], {
     server: {
       baseDir: 'build',
@@ -59,6 +61,46 @@ gulp.task('image', function() {
     .pipe(gulp.dest(path.build + 'img'))
 })
 
+// 製作 iconFont
+gulp.task('iconfont', function() {
+  return gulp
+    .src(path.source + 'assets/iconfont-src/*.svg')
+    .pipe(
+      iconfont({
+        fontName: 'iconfont',
+        formats: ['ttf', 'eot', 'woff', 'woff2'],
+        appendCodepoints: true,
+        appendUnicode: false,
+        normalize: true,
+        fontHeight: 1000,
+        centerHorizontally: true
+      })
+    )
+    .on('glyphs', function(glyphs, options) {
+      gulp
+        .src(path.source + 'assets/iconfont-src/iconfont.css')
+        .pipe(
+          consolidate('underscore', {
+            glyphs: glyphs,
+            fontName: options.fontName,
+            fontDate: new Date().getTime()
+          })
+        )
+        .pipe(gulp.dest(path.build + 'iconfont'))
+
+      gulp
+        .src(path.source + 'assets/iconfont-src/index.html')
+        .pipe(
+          consolidate('underscore', {
+            glyphs: glyphs,
+            fontName: options.fontName
+          })
+        )
+        .pipe(gulp.dest(path.build + 'iconfont'))
+    })
+    .pipe(gulp.dest(path.build + 'iconfont'))
+})
+
 gulp.task('default', ['browser-sync'])
 
 // 參考文檔
@@ -70,3 +112,6 @@ gulp.task('default', ['browser-sync'])
 
 // 3.browsersync
 // https://browsersync.io/docs/gulp#gulp-manual-reload
+
+// 4.iconFont
+// https://buddy.works/guides/how-create-webfont-from-svg-files
